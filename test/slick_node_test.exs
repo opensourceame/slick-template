@@ -32,4 +32,3 @@ defmodule SlickNodeTest do
     assert node.text == "Just some text"
   end
 end
-add
