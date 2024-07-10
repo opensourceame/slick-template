@@ -19,8 +19,9 @@ defmodule SlickTemplate do
 
   defp parse_template(template) do
     # split the template into lines
-    String.split(template, "\n")
-    |>Enum.map(lines, &parse_line/1)
+    # String.split(template, "\n")
+    # |>Enum.map(lines, &parse_line/1)
+    template
   end
 
   defp parse_line(line) do
