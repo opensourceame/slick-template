@@ -1,6 +1,5 @@
 require IEx
 
-
 defmodule SlickNode do
   @doc """
   A node in the Slick template.
@@ -11,11 +10,43 @@ defmodule SlickNode do
     struct(__MODULE__, opts ++ [children: [], attrs: %{}])
   end
 
-  def parse(line) do
-    parts = String.split(line, ~r/\s+/)
+  def parse(raw_line) do
+    line      = String.trim(raw_line)
+    line_type = determine_line_type(line)
 
-    tp = hd(parts)
+    case line_type do
+      :empty        -> {:ok, nil}
+      :comment      -> {:ok, nil}
+      :html_comment -> {:ok, html_comment(line)}
+      :tag          -> {:ok, parsed_line(line)}
+      _ -> IEx.pry
+      # _             -> {:error, "Unknown line type"}
+    end
+  end
+
+  def determine_line_type(line) do
+    cond do
+      line == ""                      -> :empty
+      String.starts_with?(line, "/!") -> :html_comment
+      String.starts_with?(line, "/")  -> :comment
+      true                            -> :tag
+    end
+  end
+
+  def parsed_line(line) do
+    parts      = String.split(line, ~r/\s+/)
+    tp         = hd(parts)
+    attributes = []
+
     {tag, classes, id} = parse_tag_part(tp)
+
+    Enum.each(Enum.with_index(tl(parts), 1), fn {part, index} ->
+      IO.puts("Processing part #{index}: #{part}")
+
+      if String.contains?(part, "=") do
+        attributes.push process_attribute(part)
+      end
+    end)
 
     IEx.pry
     # Regex to match tag, classes, and id
@@ -32,32 +63,27 @@ defmodule SlickNode do
     # end
   end
 
+  defp process_attribute(str) do
+    [key, value] = String.split(str, "=")
+    {key, value}
+  end
+
+  defp html_comment(line) do
+    "<!-- #{String.trim_leading(line, "/! ")} -->"
+  end
+
   defp parse_tag_part(tag_part) do
     classes      = []
     id           = nil
-    # [tag | rest] = tag_part
-
-    # Enum.each(Enum.with_index(rest), fn {item, index} ->
-    #   if item == "." do
-    #     classes = classes ++ [rest[index + 1]]
-    #   end
-
-    #   if item == "#" do
-    #     id = rest[index + 1]
-    #   end
-    # end)
-
-    [tag | rest] = String.split(tag_part, ~r/[.#]/)
+    [tag | rest] = String.split(tag_part, ~r/(?=[.#])/)
 
     Enum.reduce(rest, {tag, classes, id}, fn part, {tag, classes, id} ->
-      case String.first(tag_part, part) do
-        "." -> {tag, [part | classes], id}
-        "#" -> {tag, classes, part}
-        _ -> {tag, classes, id}
+      case String.first(part) do
+        "." -> {tag, [String.slice(part, 1..-1//-1) | classes], id}
+        "#" -> {tag, classes, String.slice(part, 1..-1//-1)}
+        _   -> {tag, classes, id}
       end
     end)
-
-    # {tag, classes, id}
   end
 
   # defp parse_classes(""), do: []

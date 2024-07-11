@@ -27,7 +27,7 @@ Code.require_file("lib/slick_node.ex")
 # SlickTemplate.render(t)
 # |> IO.puts()
 
-line = "div.container#main Content"
+line = "div.container#main class='something' data-something='else' Content"
 
 SlickNode.parse(line)
 |> IO.inspect()
