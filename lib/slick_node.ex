@@ -36,15 +36,18 @@ defmodule SlickNode do
   def parsed_line(line) do
     parts      = String.split(line, ~r/\s+/)
     tp         = hd(parts)
-    attributes = []
 
     {tag, classes, id} = parse_tag_part(tp)
 
     Enum.each(Enum.with_index(tl(parts), 1), fn {part, index} ->
       IO.puts("Processing part #{index}: #{part}")
+    end)
 
+    attributes = Enum.reduce(tl(parts), [], fn part, acc ->
       if String.contains?(part, "=") do
-        attributes.push process_attribute(part)
+        [process_attribute(part) | acc]
+      else
+        acc
       end
     end)
 
@@ -61,6 +64,7 @@ defmodule SlickNode do
     #   _ ->
     #     {nil, [], nil, line}
     # end
+    {tag: tag, classes: classes, id: id, text: text}
   end
 
   defp process_attribute(str) do
